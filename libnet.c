@@ -158,7 +158,7 @@ int boucleServeur(int ecoute, int (*traitement)(int)) {
                         poll_tab[i].revents = 0;
                     }
                 } else if (poll_tab[i].fd != -1) { // Not listening socket
-                    statut = traitement(poll_tab[i].fd);
+                    traitement(poll_tab[i].fd);
                     close(poll_tab[i].fd);
                     poll_tab[i].revents = 0;
                     poll_tab[i].fd = -1;
@@ -167,7 +167,6 @@ int boucleServeur(int ecoute, int (*traitement)(int)) {
             }
         }
     }
-    //return 0;
 }
 
 int gestionClient(int s) {
