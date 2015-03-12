@@ -9,7 +9,7 @@
 
 /** Nombre maximum de connexions tamponnees pour le serveur **/
 
-#define MAX_CONNEXIONS 32
+#define MAX_CONNEXIONS 2
 #define MAX_TAMPON 1024
 #define MAX_LIGNE 1024
 
