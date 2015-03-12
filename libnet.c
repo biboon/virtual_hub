@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include <poll.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -121,19 +122,54 @@ int initialisationServeur(char *service, int connexions) {
 }
 
 //Gestion des clients
-int boucleServeur(int ecoute, int (*traitement)(int))
-{
-    int dialogue;
+int boucleServeur(int ecoute, int (*traitement)(int)) {
+    //Initialize the poll structure and variables
+    struct pollfd poll_tab[MAX_CONNEXIONS];
+    int n_poll_tab = 1;
+    int new_fd, statut, i;
+    int timeout = 60000; //milliseconds
+    memset(poll_tab, 0, sizeof(poll_tab));
+    for (i = 0; i < MAX_CONNEXIONS; i++)
+        poll_tab[i].fd = -1;
+    
+    //Set up the initial listening socket
+    poll_tab[0].fd = ecoute;
+    poll_tab[0].events = POLLIN;
+    
     while (1) {
-        /* Attente d'une connexion */
-        if((dialogue = accept(ecoute, NULL, NULL)) < 0) exit(EXIT_FAILURE);
-        /* Passage de la socket de dialogue a la fonction de traitement */
-        if (traitement(dialogue) < 0) { close(ecoute); return 0; }
+        statut = poll(poll_tab, n_poll_tab, timeout);
+        if (statut < 0) { printf("boucleServeur.poll\n"); perror("boucleServeur.poll"); break; }
+        else if (statut == 0) { perror("boucleServeur.poll.timeout"); exit(EXIT_FAILURE); }
+        
+        for (i = 0; i < n_poll_tab; i++) {
+            if (poll_tab[i].revents != 0) { //Checking there is an event
+                printf("bloucleServeur event\n");
+                if (poll_tab[i].revents != POLLIN) { printf("boucleServeur.poll_tab.revents\n"); perror("boucleServeur.poll_tab.revents"); exit(EXIT_FAILURE); }
+                else if (i == 0) { //Listening socket, ie i==0 / poll_tab[i].fd == ecoute
+                    printf("Listening socket\n");
+                    new_fd = accept(ecoute, NULL, NULL);
+                    printf("new_fd: %i, n_poll_tab: %i, MAX_CONNEXIONS: %i\n", new_fd, n_poll_tab, MAX_CONNEXIONS);
+                    while (new_fd < 0 && n_poll_tab < MAX_CONNEXIONS) { //Accept new connections
+                        printf("Accept connexion %i:%i\n", n_poll_tab, new_fd);
+                        if (new_fd < 0) { perror("boucleServeur.accept"); break; }
+                        //New connection
+                        poll_tab[n_poll_tab].fd = new_fd;
+                        poll_tab[n_poll_tab].events = POLLIN;
+                        n_poll_tab++;
+                        new_fd = accept(ecoute, NULL, NULL);
+                    } 
+                    printf("Finished new connexions\n");
+                } else { //Not listening socket
+                    printf("calling traitement function\n");
+                    if (traitement(poll_tab[i].fd) < 0) { close(ecoute); break; }
+                }
+            }
+        }
     }
+    return 0;
 }
 
-int gestionClient(int s)
-{
+int gestionClient(int s) {
     /* Obtient une structure de fichier */
     FILE *dialogue = fdopen(s, "a+");
     if (dialogue == NULL) { perror("gestionClient.fdopen"); exit(EXIT_FAILURE); }
@@ -141,7 +177,7 @@ int gestionClient(int s)
     /* Echo */
     char ligne[MAX_LIGNE];
     while(fgets(ligne, MAX_LIGNE, dialogue) != NULL)
-        fprintf(dialogue, "> %s", ligne);
+        fprintf(dialogue, "%i > %s", s, ligne);
 
     /* Termine la connexion */
     fclose(dialogue);
