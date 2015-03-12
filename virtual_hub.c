@@ -17,21 +17,22 @@
 /** Fonctions **/
 
 /* Fonction principale */
-int main(int argc,char *argv[]){
-    // Initialisation du serveur
-    char* port=argv[1]; //Port de connexion
-
+int main(int argc, char *argv[]){
     // Analyse des arguments
-    #ifdef DEBUG
-        fprintf(stdout,"Port : %s\n",port);
-    #endif
-    if(argc!=2){
-        fprintf(stderr,"Syntaxe : switch <port>\n");
-        exit(-1);
+    if (argc != 2){
+        fprintf(stderr, "Syntax: %s <port>\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
+    // Initialisation du serveur
+    char* port = argv[1]; //Port de connexion
+    
+    #ifdef DEBUG
+        fprintf(stdout, "Port: %s\n", port);
+    #endif
 
     int s; //Descripteur de la SOCKET
     s = initialisationServeur(port, MAX_CONNEXIONS);
-    boucleServeur(s,gestionClient);
+    if (s < 0) { perror("virtual_hub.initialisationServeur"); exit(EXIT_FAILURE); }
+    boucleServeur(s, gestionClient);
     return 0;
 }
