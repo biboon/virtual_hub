@@ -131,7 +131,6 @@ int serverLoop(int ecoute) {
         
         // New client connecting
         if ((poll_tab[0].revents & POLLIN) != 0) {
-            poll_tab[0].revents = 0; // Resetting
             new_fd = accept(ecoute, NULL, NULL);
             if (n_clients < MAX_CONNEXIONS) {
                 n_clients++;
@@ -146,7 +145,6 @@ int serverLoop(int ecoute) {
         // Client sending packet
         for (i = 1; i <= n_clients; i++) {
             if ((poll_tab[i].revents & POLLIN) != 0) { // If event detected
-                poll_tab[i].revents = 0; // Resetting
                 uint16_t packet_length;
                 status = read_fixed(poll_tab[i].fd, (unsigned char *) &packet_length, sizeof(packet_length));
                 if (status <= 0) { // Client error, closing
@@ -196,7 +194,6 @@ int clientLoop(int sock, int iface) {
         if (nb < 0) { perror("clientLoop.poll"); exit(EXIT_FAILURE); }
         
         if ((desc[0].revents & POLLIN) != 0) { // Receiving packet from hub
-            desc[0].revents = 0; // Resetting
             unsigned char packet[BUFSIZE];
             uint16_t packet_length;
             status = read_fixed(sock, (unsigned char *) &packet_length, sizeof(packet_length));
@@ -204,7 +201,7 @@ int clientLoop(int sock, int iface) {
             int hlength = ntohs(packet_length);
             status = read_fixed(sock, packet, hlength);
             #ifdef DEBUG
-                fprintf(stderr,"Paquet de taille: %d recu par le HUB\n", hlength);
+                fprintf(stderr,"Paquet de taille %d recu par le HUB\n", hlength);
             #endif
             if (status != hlength) fprintf(stderr, "Un paquet de taille erronee recu !\n");
             else if (write(iface, packet, hlength) != hlength) {
@@ -214,7 +211,6 @@ int clientLoop(int sock, int iface) {
         }
         
         if ((desc[1].revents & POLLIN) != 0) { // receiving packet from interface
-            desc[1].revents = 0; // Resetting
             unsigned char packet[BUFSIZE];
             int hlength = read(iface, packet, BUFSIZE);
             if (hlength <= 0) { fprintf(stderr, "Interface HS !\n"); exit(EXIT_FAILURE); }

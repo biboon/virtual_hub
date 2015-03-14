@@ -5,11 +5,9 @@
 /** Constantes **/
 #define MAX_CONNEXIONS 32
 #define BUFSIZE 2048
-
 #define TAP_PRINCIPAL	"/dev/net/tun"
 
 /** Fonctions **/
-
 void socketVersClient(int s, char **hote, char **service);
 int connexionServeur(char *hote, char *service);
 int initialisationServeur(char *service, int connexions);
