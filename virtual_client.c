@@ -1,5 +1,4 @@
 /**** Fichier principal pour le commutateur virtuel ****/
-
 /** Fichiers d'inclusion **/
 
 #include <stdio.h>
@@ -21,46 +20,28 @@
 /* Fonction principale */
 int main(int argc, char *argv[]){
     // Analyse des arguments
-    if (argc != 3){
-        fprintf(stderr, "Syntaxe: %s <serveur> <port>\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "Syntaxe: %s <serveur> <port> <nom interface>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     char *serveur = argv[1];
     char *port = argv[2];
+    char *iface_name = argv[3];
     #ifdef DEBUG
-        fprintf(stdout, "HUB sur %s port %s\n", serveur, port);
+        fprintf(stdout, "HUB sur %s port %s iface %s\n", serveur, port, iface_name);
     #endif
 
     // Connexion au serveur
-    int s = connexionServeur(serveur, port);
-    if (s < 0){ fprintf(stderr, "Erreur de connexion au serveur\n"); exit(EXIT_FAILURE); }
+    int sock = connexionServeur(serveur, port);
+    if (sock < 0){ fprintf(stderr, "Erreur de connexion au serveur\n"); exit(EXIT_FAILURE); }
 
     // Ouverture de l'interface reseau
+    int iface = creationInterfaceVirtuelle(iface_name);
 
     // Communication avec le serveur
-    struct pollfd descripteurs[2];
-    descripteurs[0].fd = s;
-    descripteurs[0].events = POLLIN;
-    descripteurs[1].fd = 0;
-    descripteurs[1].events = POLLIN;
-    
-    while (1) {
-        char tampon[MAX_TAMPON];
-        int nb = poll(descripteurs, 2, -1);
-        if (nb < 0) { perror("main.poll"); exit(EXIT_FAILURE); }
-        if ((descripteurs[0].revents & POLLIN) != 0) {
-            int taille = read(s, tampon, MAX_TAMPON);
-            if (taille <= 0) break;
-            write(1, tampon, taille);
-        }
-        if ((descripteurs[1].revents & POLLIN) != 0) {
-            int taille = read(0, tampon, MAX_TAMPON);
-            if (taille <= 0) break;
-            write(s, tampon, taille);
-        }
-    }
+    clientLoop(sock, iface);
 
     // On termine la connexion
-    shutdown(s, SHUT_RDWR);
+    shutdown(sock, SHUT_RDWR);
     return 0;
 }

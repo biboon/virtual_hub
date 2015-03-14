@@ -1,26 +1,19 @@
-/** fichier libnet.h **/
+/* Ce fichier decrit les structures et les constantes utilisees
+ * par les fonctions reseau.
+ */
 
-/******************************************************************/
-/** Ce fichier decrit les structures et les constantes utilisees **/
-/** par les fonctions reseau.                                    **/
-/******************************************************************/
-
-/**** Constantes ****/
-
-/** Nombre maximum de connexions tamponnees pour le serveur **/
-
+/** Constantes **/
 #define MAX_CONNEXIONS 32
-#define MAX_TAMPON 1024
-#define MAX_LIGNE 1024
+#define BUFSIZE 2048
 
 #define TAP_PRINCIPAL	"/dev/net/tun"
 
-/**** Fonctions ****/
+/** Fonctions **/
 
 void socketVersClient(int s, char **hote, char **service);
 int connexionServeur(char *hote, char *service);
 int initialisationServeur(char *service, int connexions);
-//int read_fixed(int descripteur, unsigned char *array, int size);
+int read_fixed(int descripteur, unsigned char *array, int size);
 int creationInterfaceVirtuelle(char *nom);
-int boucleServeur(int ecoute, int (*traitement)(int));
-int gestionClient(int s);
+int serverLoop(int ecoute);
+int clientLoop(int sock, int iface);

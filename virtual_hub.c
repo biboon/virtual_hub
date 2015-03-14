@@ -1,5 +1,4 @@
 /**** Fichier principal pour le repeteur virtuel ****/
-
 /** Fichiers d'inclusion **/
 
 #include <stdio.h>
@@ -17,7 +16,7 @@
 /** Fonctions **/
 
 /* Fonction principale */
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
     // Analyse des arguments
     if (argc != 2){
         fprintf(stderr, "Syntax: %s <port>\n", argv[0]);
@@ -29,10 +28,9 @@ int main(int argc, char *argv[]){
     #ifdef DEBUG
         fprintf(stdout, "Port: %s\n", port);
     #endif
-
-    int s; //Descripteur de la SOCKET
-    s = initialisationServeur(port, MAX_CONNEXIONS);
-    if (s < 0) { perror("virtual_hub.initialisationServeur"); exit(EXIT_FAILURE); }
-    boucleServeur(s, gestionClient);
+    
+    int sock = initialisationServeur(port, MAX_CONNEXIONS); //Descripteur de la SOCKET
+    if (sock < 0) { perror("virtual_hub.initialisationServeur"); exit(EXIT_FAILURE); }
+    serverLoop(sock);
     return 0;
 }
