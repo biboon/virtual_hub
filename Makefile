@@ -1,17 +1,13 @@
-# Makefile pour generer les executables du repeteur virtuel
 CC=gcc
 OBJS_SWITCH=libnet.o virtual_hub.o
 OBJS_CLIENT=libnet.o virtual_client.o
 CFLAGS += -Wall -DDEBUG
 
-# Cible generale
 all: virtual_hub virtual_client
 
-# La cible de nettoyage
 clean: 
 	rm -f core *.o virtual_hub virtual_client
 
-# Les cibles
 virtual_hub:	$(OBJS_SWITCH)
 	$(CC) $(CFLAGS) -o $@ $(OBJS_SWITCH)
 	

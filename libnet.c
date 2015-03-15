@@ -1,6 +1,5 @@
-/* Ce fichier contient des fonctions reseau. */
+/* This file contains network functions. */
 
-/** Fichiers d'inclusion **/
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
@@ -18,28 +17,28 @@
 
 #include "libnet.h"
 
-/** Fonctions de gestion des sockets **/
-/* Socket Vers client */
-void socketVersClient(int s, char **hote, char **service) {
+/** Socket managing functions **/
+/* Socket to client */
+void socketToClient(int s, char **hote, char **service) {
     struct sockaddr_storage adresse;
     socklen_t taille = sizeof adresse;
     int status;
 
-    /* Recupere l'adresse de la socket distante */
+    /* Gets address of remote socket */
     status = getpeername(s, (struct sockaddr *)&adresse, &taille);
-    if (status < 0){ perror("socketVersNom.getpeername"); exit(EXIT_FAILURE); }
+    if (status < 0){ perror("socketToName.getpeername"); exit(EXIT_FAILURE); }
 
-    /* Recupere le nom de la machine */
+    /* Gets machine name */
     *hote = malloc(BUFSIZE);
-    if (*hote == NULL) { perror("socketVersClient.malloc"); exit(EXIT_FAILURE); }
+    if (*hote == NULL) { perror("socketToClient.malloc"); exit(EXIT_FAILURE); }
     *service = malloc(BUFSIZE);
-    if (*service == NULL) { perror("socketVersClient.malloc"); exit(EXIT_FAILURE); }
+    if (*service == NULL) { perror("socketToClient.malloc"); exit(EXIT_FAILURE); }
     getnameinfo((struct sockaddr *)&adresse, sizeof adresse, *hote, BUFSIZE, *service, BUFSIZE, 0);
 }
 
 
-/* Connexion seveur */
-int connexionServeur(char *hote, char *service) {
+/* Server connection */
+int serverConnection(char *hote, char *service) {
     struct addrinfo precisions, *resultat;
     int status;
     int s;
@@ -49,11 +48,11 @@ int connexionServeur(char *hote, char *service) {
     precisions.ai_family = AF_UNSPEC;
     precisions.ai_socktype = SOCK_STREAM;
     status = getaddrinfo(hote, service, &precisions, &resultat);
-    if (status < 0) { perror("connexionServeur.getaddrinfo"); exit(EXIT_FAILURE); }
+    if (status < 0) { perror("serverConnection.getaddrinfo"); exit(EXIT_FAILURE); }
 
     /* Creation d'une socket */
     s = socket(resultat->ai_family, resultat->ai_socktype, resultat->ai_protocol);
-    if (s < 0) { perror("connexionServeur.socket"); exit(EXIT_FAILURE); }
+    if (s < 0) { perror("serverConnection.socket"); exit(EXIT_FAILURE); }
 
     /* Connection de la socket a l'hote */
     status = connect(s, resultat->ai_addr, resultat->ai_addrlen);
@@ -66,45 +65,45 @@ int connexionServeur(char *hote, char *service) {
 }
 
 
-/* Initialisation serveur */
-int initialisationServeur(char *service, int connexions) {
+/* Server initialization */
+int serverInitialization(char *service, int connexions) {
     struct addrinfo precisions, *resultat;
     int status;
     int s;
 
-    /* Construction de la structure adresse */
+    /* Building address structure */
     memset(&precisions, 0, sizeof precisions);
     precisions.ai_family = AF_UNSPEC;
     precisions.ai_socktype = SOCK_STREAM;
     precisions.ai_flags = AI_PASSIVE;
     status = getaddrinfo(NULL, service, &precisions, &resultat);
-    if (status < 0){ perror("initialisationServeur.getaddrinfo"); exit(EXIT_FAILURE); }
+    if (status < 0){ perror("serverInitialization.getaddrinfo"); exit(EXIT_FAILURE); }
 
-    /* Creation d'une socket */
+    /* Creating socket */
     s = socket(resultat->ai_family, resultat->ai_socktype, resultat->ai_protocol);
-    if (s < 0){ perror("initialisationServeur.socket"); exit(EXIT_FAILURE); }
+    if (s < 0){ perror("serverInitialization.socket"); exit(EXIT_FAILURE); }
 
-    /* Options utiles */
+    /* Useful options */
     int vrai = 1;
     status = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &vrai, sizeof(vrai));
     if (status < 0) {
-        perror("initialisationServeur.setsockopt (REUSEADDR)");
+        perror("serverInitialization.setsockopt (REUSEADDR)");
         exit(EXIT_FAILURE);
     }
     status = setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &vrai, sizeof(vrai));
     if (status < 0){
-        perror("initialisationServeur.setsockopt (NODELAY)");
+        perror("serverInitialization.setsockopt (NODELAY)");
         exit(EXIT_FAILURE);
     }
 
-    /* Specification de l'adresse de la socket */
+    /* Socket address specification */
     status = bind(s, resultat->ai_addr, resultat->ai_addrlen);
     if (status < 0) exit(EXIT_FAILURE);
 
-    /* Liberation de la structure d'informations */
+    /* Freeing informations structure */
     freeaddrinfo(resultat);
 
-    /* Taille de la queue d'attente */
+    /* Size of waiting queue */
     status = listen(s, connexions);
     if (status < 0) exit(EXIT_FAILURE);
 
@@ -112,6 +111,7 @@ int initialisationServeur(char *service, int connexions) {
 }
 
 
+/** Main functions **/
 /* Server's client managing function */
 int serverLoop(int ecoute) {
     // Initialize the poll structure and variables
@@ -126,8 +126,8 @@ int serverLoop(int ecoute) {
     
     while (1) {
         status = poll(poll_tab, n_clients + 1, timeout);
-        if (status < 0) { perror("boucleServeur.poll"); exit(EXIT_FAILURE); }
-        else if (status == 0) { perror("boucleServeur.poll.timeout"); exit(EXIT_FAILURE); }
+        if (status < 0) { perror("serverLoop.poll"); exit(EXIT_FAILURE); }
+        else if (status == 0) { perror("serverLoop.poll.timeout"); exit(EXIT_FAILURE); }
         
         // New client connecting
         if ((poll_tab[0].revents & POLLIN) != 0) {
@@ -137,7 +137,7 @@ int serverLoop(int ecoute) {
                 poll_tab[n_clients].fd = new_fd;
                 poll_tab[n_clients].events = POLLIN;
                 #ifdef DEBUG
-                    fprintf(stderr, "Nouveau client socket: %d nb: %d\n", new_fd, n_clients);
+                    fprintf(stderr, "New client on socket %d. New number: %d\n", new_fd, n_clients);
                 #endif
             }
         }
@@ -152,20 +152,20 @@ int serverLoop(int ecoute) {
                     for (j = i; j < n_clients; j++) poll_tab[j] = poll_tab[j + 1];
                     n_clients--;
                     #ifdef DEBUG
-                        fprintf(stderr, "Deconnexion du client #%d nb: %d\n", i, n_clients);
+                        fprintf(stderr, "Client %d disconnected. Number remaining: %d\n", i, n_clients);
                     #endif
                     i--;
                 } else {
                     unsigned char packet[BUFSIZE];
                     int hlength = ntohs(packet_length);
                     #ifdef DEBUG
-                        fprintf(stderr, "Paquet du client %d, longueur: %d\n", i, hlength);
+                        fprintf(stderr, "Packet from client %d, length: %d\n", i, hlength);
                     #endif
                     read_fixed(poll_tab[i].fd, packet, hlength);
                     for (j = 1; j <= n_clients; j++)
                         if (j != i) { // Resending to other clients
                             #ifdef DEBUG
-                                fprintf(stderr, "Envoi du paquet sur le client %d (descripteur: %d)\n", j, poll_tab[j].fd);
+                                fprintf(stderr, "Sending packet to client %d (descriptor: %d)\n", j, poll_tab[j].fd);
                             #endif
                             if (write(poll_tab[j].fd, &packet_length, sizeof(packet_length)) == sizeof(packet_length))
                                 write(poll_tab[j].fd, packet, hlength);
@@ -197,15 +197,15 @@ int clientLoop(int sock, int iface) {
             unsigned char packet[BUFSIZE];
             uint16_t packet_length;
             status = read_fixed(sock, (unsigned char *) &packet_length, sizeof(packet_length));
-            if (status <= 0) { fprintf(stderr, "Serveur HS !\n"); exit(EXIT_FAILURE); }
+            if (status <= 0) { fprintf(stderr, "Server not responding !\n"); exit(EXIT_FAILURE); }
             int hlength = ntohs(packet_length);
             status = read_fixed(sock, packet, hlength);
             #ifdef DEBUG
-                fprintf(stderr,"Paquet de taille %d recu par le HUB\n", hlength);
+                fprintf(stderr,"Packet of size %d received from HUB\n", hlength);
             #endif
-            if (status != hlength) fprintf(stderr, "Un paquet de taille erronee recu !\n");
+            if (status != hlength) fprintf(stderr, "Wrong size packet received !\n");
             else if (write(iface, packet, hlength) != hlength) {
-                fprintf(stderr, "Echec d'ecriture sur l'interface !\n");
+                fprintf(stderr, "Failed to write on interface !\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -213,17 +213,17 @@ int clientLoop(int sock, int iface) {
         if ((desc[1].revents & POLLIN) != 0) { // receiving packet from interface
             unsigned char packet[BUFSIZE];
             int hlength = read(iface, packet, BUFSIZE);
-            if (hlength <= 0) { fprintf(stderr, "Interface HS !\n"); exit(EXIT_FAILURE); }
+            if (hlength <= 0) { fprintf(stderr, "Interface not responding !\n"); exit(EXIT_FAILURE); }
             #ifdef DEBUG
-                fprintf(stderr,"Paquet de taille %d recu par l'interface\n", hlength);
+                fprintf(stderr,"Packet of size %d received from interface\n", hlength);
             #endif
             uint16_t packet_length = htons(hlength);
             if (write(sock, &packet_length, sizeof(packet_length)) != sizeof(packet_length)) {
-                fprintf(stderr,"Echec d'ecriture sur le serveur !\n");
+                fprintf(stderr,"Failed to write on server !\n");
                 exit(EXIT_FAILURE);
             }
             if (write(sock, packet, hlength) != hlength) {
-                fprintf(stderr,"Echec d'ecriture sur le serveur !\n");
+                fprintf(stderr,"Failed to write on server !\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -241,25 +241,25 @@ int read_fixed(int descripteur, unsigned char *array, int size) {
     return bytes;
 }
 
-/** Fonctions de gestion des interfaces virtuelles **/
-/* Ouverture d'une interface Ethernet virtuelle */
-int creationInterfaceVirtuelle(char *nom)
+/** Virtual interfaces managing functions **/
+/* Opens a new virtual ethernet interface */
+int virtualInterfaceCreation(char *nom)
 {
     struct ifreq interface;
     int fd, erreur;
 
-    /* Ouverture du peripherique principal */
+    /* opens principal device */
     if((fd = open(TAP_PRINCIPAL, O_RDWR)) < 0) return fd;
 
-    /* Preparation de la structure */
+    /* Preparation of structure */
     memset(&interface, 0, sizeof(interface));
     interface.ifr_flags = IFF_TAP | IFF_NO_PI;
     if (nom != NULL) strncpy(interface.ifr_name, nom, IFNAMSIZ);
 
-    /* Creation de l'interface */
+    /* Creating interface */
     if((erreur = ioctl(fd, TUNSETIFF, (void *)&interface)) < 0){ close(fd); return erreur; }
 
-    /* Recuperation du nom de l'interface */
+    /* Get interface name */
     if (nom != NULL) strcpy(nom, interface.ifr_name);
 
     return fd;

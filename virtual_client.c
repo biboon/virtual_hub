@@ -1,5 +1,4 @@
-/**** Fichier principal pour le commutateur virtuel ****/
-/** Fichiers d'inclusion **/
+/** Main file of virtual client **/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,37 +10,32 @@
 
 #include "libnet.h"
 
-/** Quelques constantes **/
 
-/** Variables globales */
-
-/** Fonctions **/
-
-/* Fonction principale */
+/* Main function */
 int main(int argc, char *argv[]){
-    // Analyse des arguments
+    /* Analyzing options */
     if (argc != 4) {
-        fprintf(stderr, "Syntaxe: %s <serveur> <port> <nom interface>\n", argv[0]);
+        fprintf(stderr, "Syntax: %s <server> <port> <interface name>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     char *serveur = argv[1];
     char *port = argv[2];
     char *iface_name = argv[3];
     #ifdef DEBUG
-        fprintf(stdout, "HUB sur %s port %s iface %s\n", serveur, port, iface_name);
+        fprintf(stdout, "HUB at %s port %s iface %s\n", serveur, port, iface_name);
     #endif
 
-    // Connexion au serveur
-    int sock = connexionServeur(serveur, port);
-    if (sock < 0){ fprintf(stderr, "Erreur de connexion au serveur\n"); exit(EXIT_FAILURE); }
+    /* Connection to server */
+    int sock = serverConnection(serveur, port);
+    if (sock < 0){ fprintf(stderr, "Failed to connect to server\n"); exit(EXIT_FAILURE); }
 
-    // Ouverture de l'interface reseau
-    int iface = creationInterfaceVirtuelle(iface_name);
+    /* Opening network interface */
+    int iface = virtualInterfaceCreation(iface_name);
 
-    // Communication avec le serveur
+    /* Communication with server */
     clientLoop(sock, iface);
 
-    // On termine la connexion
+    /* Closing connection */
     shutdown(sock, SHUT_RDWR);
     return 0;
 }

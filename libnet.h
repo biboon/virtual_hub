@@ -1,17 +1,15 @@
-/* Ce fichier decrit les structures et les constantes utilisees
- * par les fonctions reseau.
- */
+/* This file contains descriptions of network functions */
 
-/** Constantes **/
+/** Constants **/
 #define MAX_CONNEXIONS 32
 #define BUFSIZE 2048
-#define TAP_PRINCIPAL	"/dev/net/tun"
+#define TAP_PRINCIPAL "/dev/net/tun"
 
-/** Fonctions **/
-void socketVersClient(int s, char **hote, char **service);
-int connexionServeur(char *hote, char *service);
-int initialisationServeur(char *service, int connexions);
+/** Functions **/
+void socketToClient(int s, char **hote, char **service);
+int serverConnection(char *hote, char *service);
+int serverInitialization(char *service, int connexions);
 int read_fixed(int descripteur, unsigned char *array, int size);
-int creationInterfaceVirtuelle(char *nom);
+int virtualInterfaceCreation(char *nom);
 int serverLoop(int ecoute);
 int clientLoop(int sock, int iface);
